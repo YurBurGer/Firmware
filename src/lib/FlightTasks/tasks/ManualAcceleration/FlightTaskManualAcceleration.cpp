@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,37 +32,44 @@
  ****************************************************************************/
 
 /**
- * @file FlightManualPositionSmooth.cpp
+ * @file FlightTaskManualAcceleration.cpp
  */
 
-#include "FlightTaskManualPositionSmooth.hpp"
+#include "FlightTaskManualAcceleration.hpp"
+#include <mathlib/mathlib.h>
+#include <float.h>
 
 using namespace matrix;
 
-FlightTaskManualPositionSmooth::FlightTaskManualPositionSmooth() :
-	_smoothingXY(this, Vector2f(_velocity)),
-	_smoothingZ(this, _velocity(2), _sticks(2))
-{}
-
-void FlightTaskManualPositionSmooth::_updateSetpoints()
+FlightTaskManualAcceleration::FlightTaskManualAcceleration()
 {
-	/* Get yaw setpont, un-smoothed position setpoints.*/
-	FlightTaskManualPosition::_updateSetpoints();
 
-	/* Smooth velocity setpoint in xy.*/
-	Vector2f vel(_velocity);
-	Vector2f vel_sp_xy(_velocity_setpoint);
-	_smoothingXY.updateMaxVelocity(_constraints.speed_xy);
-	_smoothingXY.smoothVelocity(vel_sp_xy, vel, _yaw, _yawspeed_setpoint, _deltatime);
-	_velocity_setpoint(0) = vel_sp_xy(0);
-	_velocity_setpoint(1) = vel_sp_xy(1);
+}
 
-	/* Check for xy position lock.*/
-	_updateXYlock();
+bool FlightTaskManualAcceleration::initializeSubscriptions(SubscriptionArray &subscription_array)
+{
+	if (!FlightTaskManual::initializeSubscriptions(subscription_array)) {
+		return false;
+	}
+	return true;
+}
 
-	/* Smooth velocity in z.*/
-	_smoothingZ.smoothVelFromSticks(_velocity_setpoint(2), _deltatime);
+bool FlightTaskManualAcceleration::updateInitialize()
+{
+	bool ret = FlightTaskManual::updateInitialize();
+	return ret;
+}
 
-	/* Check for altitude lock*/
-	_updateAltitudeLock();
+bool FlightTaskManualAcceleration::activate()
+{
+	bool ret = FlightTaskManual::activate();
+	return ret;
+}
+
+bool FlightTaskManualAcceleration::update()
+{
+	_acceleration_setpoint = Vector3f(&_sticks_expo(0));
+	printf("ACC IN TASK:\n");
+	_acceleration_setpoint.print();
+	return true;
 }
